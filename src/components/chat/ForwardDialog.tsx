@@ -81,16 +81,19 @@ export function ForwardDialog({
             items.map((item) => {
               const id = item.chat.id;
               const checked = selected.includes(id);
+              const blocked = !checked && atLimit;
               return (
                 <li key={id}>
                   <button
                     type="button"
+                    disabled={blocked}
+                    aria-pressed={checked}
                     onClick={() =>
                       setSelected((prev) =>
                         prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
                       )
                     }
-                    className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-muted"
+                    className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Checkbox checked={checked} className="pointer-events-none" />
                     <UserAvatar
@@ -105,6 +108,13 @@ export function ForwardDialog({
             })
           )}
         </ul>
+
+        {atLimit ? (
+          <p className="text-center text-xs text-muted-foreground">
+            That's the {FORWARD_LIMIT}-chat limit for a single forward.
+          </p>
+        ) : null}
+
 
         <DialogFooter>
           <Button
