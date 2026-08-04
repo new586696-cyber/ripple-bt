@@ -371,7 +371,8 @@ export function Composer({
         open={photoPickerOpen}
         onOpenChange={setPhotoPickerOpen}
         title="Send a photo"
-        onPicked={(file) => void acceptPhoto(file)}
+        captureLabel="Take photo & send"
+        onPicked={(file, source) => void acceptPhoto(file, source)}
       />
       <input
         ref={fileInput}
