@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as StarredRouteImport } from './routes/starred'
 import { Route as ChatsIndexRouteImport } from './routes/chats/index'
 import { Route as ChatsNewRouteImport } from './routes/chats/new'
 import { Route as ChatsChatIdIndexRouteImport } from './routes/chats/$chatId/index'
@@ -24,6 +25,11 @@ const IndexRoute = IndexRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StarredRoute = StarredRouteImport.update({
+  id: '/starred',
+  path: '/starred',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatsIndexRoute = ChatsIndexRouteImport.update({
@@ -50,6 +56,7 @@ const ChatsChatIdInfoRoute = ChatsChatIdInfoRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
+  '/starred': typeof StarredRoute
   '/chats/new': typeof ChatsNewRoute
   '/chats/': typeof ChatsIndexRoute
   '/chats/$chatId/info': typeof ChatsChatIdInfoRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
+  '/starred': typeof StarredRoute
   '/chats/new': typeof ChatsNewRoute
   '/chats': typeof ChatsIndexRoute
   '/chats/$chatId/info': typeof ChatsChatIdInfoRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
+  '/starred': typeof StarredRoute
   '/chats/new': typeof ChatsNewRoute
   '/chats/': typeof ChatsIndexRoute
   '/chats/$chatId/info': typeof ChatsChatIdInfoRoute
@@ -77,6 +86,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/settings'
+    | '/starred'
     | '/chats/new'
     | '/chats/'
     | '/chats/$chatId/info'
@@ -85,6 +95,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/settings'
+    | '/starred'
     | '/chats/new'
     | '/chats'
     | '/chats/$chatId/info'
@@ -93,6 +104,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/settings'
+    | '/starred'
     | '/chats/new'
     | '/chats/'
     | '/chats/$chatId/info'
@@ -102,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRoute: typeof SettingsRoute
+  StarredRoute: typeof StarredRoute
   ChatsNewRoute: typeof ChatsNewRoute
   ChatsIndexRoute: typeof ChatsIndexRoute
   ChatsChatIdInfoRoute: typeof ChatsChatIdInfoRoute
@@ -122,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/starred': {
+      id: '/starred'
+      path: '/starred'
+      fullPath: '/starred'
+      preLoaderRoute: typeof StarredRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chats/': {
@@ -158,6 +178,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRoute: SettingsRoute,
+  StarredRoute: StarredRoute,
   ChatsNewRoute: ChatsNewRoute,
   ChatsIndexRoute: ChatsIndexRoute,
   ChatsChatIdInfoRoute: ChatsChatIdInfoRoute,
