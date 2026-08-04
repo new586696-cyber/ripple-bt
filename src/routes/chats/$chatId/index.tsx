@@ -275,7 +275,7 @@ function ChatPage() {
       ? `${members.length} members`
       : otherIsOnline
         ? "Online"
-        : otherUser && otherUser.show_last_seen !== false
+        : canSeePresence
           ? "Offline"
           : undefined);
 

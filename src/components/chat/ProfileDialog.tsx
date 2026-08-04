@@ -21,11 +21,14 @@ export function ProfileDialog({
   open,
   onOpenChange,
   online = false,
+  viewerSharesPresence = true,
 }: {
   userId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   online?: boolean;
+  /** When the viewer hides their own last seen, they don't get to see anyone else's. */
+  viewerSharesPresence?: boolean;
 }) {
   const { data, isLoading } = useQuery({
     queryKey: ["profile", userId],
@@ -40,7 +43,7 @@ export function ProfileDialog({
     },
   });
 
-  const showPresence = data?.show_last_seen !== false;
+  const showPresence = viewerSharesPresence && data?.show_last_seen !== false;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
