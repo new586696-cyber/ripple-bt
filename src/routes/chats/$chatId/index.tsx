@@ -747,7 +747,8 @@ function ChatPage() {
         userId={profileUserId}
         open={!!profileUserId}
         onOpenChange={(open) => !open && setProfileUserId(null)}
-        online={!!profileUserId && online.has(profileUserId)}
+        online={iSharePresence && !!profileUserId && online.has(profileUserId)}
+        viewerSharesPresence={iSharePresence}
       />
 
       {userId ? (
