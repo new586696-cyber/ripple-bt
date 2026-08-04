@@ -167,7 +167,10 @@ function ChatPage() {
   });
 
   const online = usePresence(userId);
-  const otherIsOnline = !!otherUser && otherUser.show_last_seen !== false && online.has(otherUser.id);
+  // Presence is reciprocal: hiding your own last seen also hides everyone else's.
+  const iSharePresence = profile?.show_last_seen !== false;
+  const canSeePresence = iSharePresence && !!otherUser && otherUser.show_last_seen !== false;
+  const otherIsOnline = canSeePresence && online.has(otherUser.id);
   const { typing, notifyTyping } = useTyping(chatId, userId, profile?.display_name ?? "Someone");
 
   // Live message + read-receipt updates for this conversation.
