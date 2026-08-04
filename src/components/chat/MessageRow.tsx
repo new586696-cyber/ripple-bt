@@ -65,6 +65,9 @@ export type MessageRowProps = {
 };
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
+/** Delete-for-everyone stays available for an hour, like other mainstream clients. */
+const DELETE_EVERYONE_WINDOW_MS = 60 * 60 * 1000;
+const TAPBACK_EMOJI = "❤️";
 
 export function MessageRow(props: MessageRowProps) {
   const {
@@ -104,11 +107,21 @@ export function MessageRow(props: MessageRowProps) {
   );
   const grouped = groupReactions(reactions);
   const mine = reactions.find((r) => r.user_id === myUserId)?.emoji ?? null;
-  const canEdit =
-    isMine &&
-    !deleted &&
-    message.type === "text" &&
-    Date.now() - new Date(message.created_at).getTime() < EDIT_WINDOW_MS;
+  const age = Date.now() - new Date(message.created_at).getTime();
+  const canEdit = isMine && !deleted && message.type === "text" && age < EDIT_WINDOW_MS;
+  const canDeleteForEveryone = isMine && !deleted && age < DELETE_EVERYONE_WINDOW_MS;
+
+  // Double-tap / double-click anywhere on the bubble applies a quick tapback.
+  const lastTap = useRef(0);
+  const registerTap = () => {
+    const now = Date.now();
+    if (now - lastTap.current < 320 && !deleted) {
+      lastTap.current = 0;
+      onReact(TAPBACK_EMOJI);
+      return;
+    }
+    lastTap.current = now;
+  };
 
   return (
     <div
