@@ -155,6 +155,7 @@ export function MessageRow(props: MessageRowProps) {
           {...props}
           deleted={deleted}
           canEdit={canEdit}
+          canDeleteForEveryone={canDeleteForEveryone}
           pinned={pinned}
           starred={starred}
           mine={mine}
@@ -164,6 +165,7 @@ export function MessageRow(props: MessageRowProps) {
       ) : null}
 
       <div
+        onClick={registerTap}
         className={cn(
           "relative max-w-[78%] rounded-2xl px-3 py-2 shadow-bubble",
           isMine
@@ -283,6 +285,7 @@ export function MessageRow(props: MessageRowProps) {
           {...props}
           deleted={deleted}
           canEdit={canEdit}
+          canDeleteForEveryone={canDeleteForEveryone}
           pinned={pinned}
           starred={starred}
           mine={mine}
