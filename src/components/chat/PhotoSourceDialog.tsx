@@ -101,29 +101,34 @@ function CameraDialog({
   );
 }
 
+export type PhotoSource = "camera" | "library";
+
 /**
  * Chooser offering "Take photo" (live camera, falling back to the device camera
- * input on mobile) and "Choose from library".
+ * input on mobile) and "Choose from library". Callers can treat camera captures
+ * differently — Ripple sends them straight away.
  */
 export function PhotoSourceDialog({
   open,
   onOpenChange,
   onPicked,
   title = "Add a photo",
+  captureLabel = "Take photo",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPicked: (file: File) => void;
+  onPicked: (file: File, source: PhotoSource) => void;
   title?: string;
+  captureLabel?: string;
 }) {
   const libraryInput = useRef<HTMLInputElement>(null);
   const captureInput = useRef<HTMLInputElement>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
 
-  const handleFile = (file: File | undefined) => {
+  const handleFile = (file: File | undefined, source: PhotoSource) => {
     if (!file) return;
     onOpenChange(false);
-    onPicked(file);
+    onPicked(file, source);
   };
 
   return (
