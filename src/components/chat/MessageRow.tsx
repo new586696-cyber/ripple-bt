@@ -223,13 +223,15 @@ export function MessageRow(props: MessageRowProps) {
           <span>{formatTime(message.created_at)}</span>
           {isMine ? (
             message.failed ? (
-              <TriangleAlert className="size-3.5 text-destructive" />
+              <TriangleAlert className="size-3.5 text-destructive" aria-label="Not sent" />
             ) : message.pending ? (
-              <Clock className="size-3.5" />
-            ) : seenBy.length === receiptOthers.length && receiptOthers.length > 0 ? (
-              <CheckCheck className="size-3.5 text-primary" />
+              <Clock className="size-3.5" aria-label="Sending" />
+            ) : receiptOthers.length > 0 && seenBy.length === receiptOthers.length ? (
+              <CheckCheck className="size-3.5 text-primary" aria-label="Read" />
+            ) : others.length > 0 ? (
+              <CheckCheck className="size-3.5" aria-label="Delivered" />
             ) : (
-              <Check className="size-3.5" />
+              <Check className="size-3.5" aria-label="Sent" />
             )
           ) : null}
         </div>
