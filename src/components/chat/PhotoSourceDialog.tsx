@@ -147,7 +147,7 @@ export function PhotoSourceDialog({
                 else captureInput.current?.click();
               }}
             >
-              <Camera className="size-5" /> Take photo
+              <Camera className="size-5" /> {captureLabel}
             </Button>
             <Button
               variant="secondary"
@@ -166,7 +166,7 @@ export function PhotoSourceDialog({
           setCameraOpen(next);
           if (!next) onOpenChange(false);
         }}
-        onCapture={(file) => onPicked(file)}
+        onCapture={(file) => onPicked(file, "camera")}
       />
 
       <input
@@ -177,7 +177,7 @@ export function PhotoSourceDialog({
         onChange={(e) => {
           const file = e.target.files?.[0];
           e.target.value = "";
-          handleFile(file);
+          handleFile(file, "library");
         }}
       />
       <input
@@ -189,7 +189,7 @@ export function PhotoSourceDialog({
         onChange={(e) => {
           const file = e.target.files?.[0];
           e.target.value = "";
-          handleFile(file);
+          handleFile(file, "camera");
         }}
       />
     </>
