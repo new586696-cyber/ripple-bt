@@ -55,7 +55,10 @@ export function ForwardDialog({
       <DialogContent className="max-h-[80vh] gap-3 overflow-hidden">
         <DialogHeader>
           <DialogTitle>Forward message</DialogTitle>
-          <DialogDescription>Pick one or more chats to send this to.</DialogDescription>
+          <DialogDescription>
+            Pick up to {FORWARD_LIMIT} chats to send this to. Forwarded messages are labelled for
+            the people who receive them.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="relative">
