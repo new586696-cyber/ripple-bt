@@ -17,7 +17,14 @@ import {
 } from "lucide-react";
 import { formatTime, type Message, type ParticipantWithProfile, type Profile } from "@/lib/chat";
 import { messageSnippet, QUICK_EMOJI, MORE_EMOJI, type Reaction } from "@/lib/messaging";
-import { FileMessage, ImageMessage, VoiceMessage } from "@/components/chat/MediaMessage";
+import {
+  attachmentKind,
+  FileMessage,
+  ImageMessage,
+  PdfMessage,
+  VideoMessage,
+  VoiceMessage,
+} from "@/components/chat/MediaMessage";
 import { UserAvatar } from "@/components/chat/UserAvatar";
 import {
   DropdownMenu,
@@ -187,7 +194,17 @@ export function MessageRow(props: MessageRowProps) {
           <>
             {message.type === "image" ? <ImageMessage message={message} /> : null}
             {message.type === "voice" ? <VoiceMessage message={message} /> : null}
-            {message.type === "file" ? <FileMessage message={message} /> : null}
+            {message.type === "file" ? (
+              attachmentKind(message) === "video" ? (
+                <VideoMessage message={message} />
+              ) : attachmentKind(message) === "image" ? (
+                <ImageMessage message={message} />
+              ) : attachmentKind(message) === "pdf" ? (
+                <PdfMessage message={message} />
+              ) : (
+                <FileMessage message={message} />
+              )
+            ) : null}
 
             {message.text ? (
               <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
