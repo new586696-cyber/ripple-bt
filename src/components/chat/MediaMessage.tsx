@@ -1,10 +1,29 @@
 import { useEffect, useRef, useState } from "react";
-import { Download, File as FileIcon, Pause, Play } from "lucide-react";
+import { Download, File as FileIcon, FileText, Pause, Play, Expand } from "lucide-react";
 import { formatBytes, signedMediaUrl, type Message } from "@/lib/chat";
 import { formatClock, readWaveform } from "@/lib/audio";
 import { claimVoicePlayback, releaseVoicePlayback } from "@/lib/voice-player";
+import { MediaViewer, type ViewerItem } from "@/components/chat/MediaViewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+
+type MediaMeta = { fileName?: string; sizeBytes?: number; mimeType?: string };
+
+export function mediaMetaOf(message: Message): MediaMeta {
+  return (message.media_meta ?? {}) as MediaMeta;
+}
+
+/** Decides how a stored attachment should be presented in the thread. */
+export function attachmentKind(message: Message): "image" | "video" | "pdf" | "file" {
+  if (message.type === "image") return "image";
+  const meta = mediaMetaOf(message);
+  const mime = (meta.mimeType ?? "").toLowerCase();
+  const name = (meta.fileName ?? "").toLowerCase();
+  if (mime.startsWith("video/") || /\.(mp4|mov|webm|m4v)$/.test(name)) return "video";
+  if (mime.startsWith("image/")) return "image";
+  if (mime === "application/pdf" || name.endsWith(".pdf")) return "pdf";
+  return "file";
+}
 
 function useMediaUrl(path: string | null) {
   const [url, setUrl] = useState<string | null>(null);
@@ -25,20 +44,110 @@ function useMediaUrl(path: string | null) {
 
 export function ImageMessage({ message }: { message: Message }) {
   const { url, failed } = useMediaUrl(message.media_url);
+  const [viewing, setViewing] = useState<ViewerItem | null>(null);
+  const meta = mediaMetaOf(message);
+
   if (failed)
     return <p className="text-xs text-muted-foreground">This photo couldn't be loaded.</p>;
   if (!url) return <Skeleton className="h-48 w-56 rounded-xl" />;
+
   return (
-    <a href={url} target="_blank" rel="noreferrer" className="block">
-      <img
-        src={url}
-        alt={message.text || "Shared photo"}
-        loading="lazy"
-        className="max-h-72 w-full max-w-xs rounded-xl object-cover"
-      />
-    </a>
+    <>
+      <button
+        type="button"
+        aria-label="Open photo"
+        onClick={() =>
+          setViewing({
+            url,
+            kind: "image",
+            name: meta.fileName ?? "Photo",
+            caption: message.text,
+          })
+        }
+        className="group/media relative block overflow-hidden rounded-xl"
+      >
+        <img
+          src={url}
+          alt={message.text || "Shared photo"}
+          loading="lazy"
+          className="max-h-72 w-full max-w-xs object-cover"
+        />
+        <span className="absolute right-2 top-2 rounded-full bg-viewer-backdrop p-1.5 text-viewer-foreground opacity-0 transition-opacity group-hover/media:opacity-100">
+          <Expand className="size-3.5" />
+        </span>
+      </button>
+      <MediaViewer item={viewing} onClose={() => setViewing(null)} />
+    </>
   );
 }
+
+/** Inline video player with a tap-to-fullscreen affordance. */
+export function VideoMessage({ message }: { message: Message }) {
+  const { url, failed } = useMediaUrl(message.media_url);
+  const [viewing, setViewing] = useState<ViewerItem | null>(null);
+  const meta = mediaMetaOf(message);
+
+  if (failed)
+    return <p className="text-xs text-muted-foreground">This video couldn't be loaded.</p>;
+  if (!url) return <Skeleton className="h-48 w-56 rounded-xl" />;
+
+  return (
+    <>
+      <div className="relative overflow-hidden rounded-xl">
+        <video
+          src={url}
+          controls
+          preload="metadata"
+          playsInline
+          className="max-h-72 w-full max-w-xs bg-black/80"
+        />
+        <button
+          type="button"
+          aria-label="Open video full screen"
+          onClick={() => setViewing({ url, kind: "video", name: meta.fileName ?? "Video" })}
+          className="absolute right-2 top-2 rounded-full bg-viewer-backdrop p-1.5 text-viewer-foreground"
+        >
+          <Expand className="size-3.5" />
+        </button>
+      </div>
+      <MediaViewer item={viewing} onClose={() => setViewing(null)} />
+    </>
+  );
+}
+
+/** PDFs open in an in-app reader rather than leaving the conversation. */
+export function PdfMessage({ message }: { message: Message }) {
+  const { url, failed } = useMediaUrl(message.media_url);
+  const [viewing, setViewing] = useState<ViewerItem | null>(null);
+  const meta = mediaMetaOf(message);
+
+  return (
+    <>
+      <button
+        type="button"
+        disabled={!url}
+        aria-label={`Open ${meta.fileName ?? "document"}`}
+        onClick={() => url && setViewing({ url, kind: "pdf", name: meta.fileName ?? "Document" })}
+        className="flex min-w-52 items-center gap-3 rounded-xl bg-background/50 p-2 text-left disabled:opacity-60"
+      >
+        <span className="flex size-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
+          <FileText className="size-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium">
+            {meta.fileName ?? "Document.pdf"}
+          </span>
+          <span className="block text-xs opacity-70">
+            {failed ? "Unavailable" : `PDF · ${formatBytes(meta.sizeBytes)}`}
+          </span>
+        </span>
+        <Expand className="size-4 opacity-60" />
+      </button>
+      <MediaViewer item={viewing} onClose={() => setViewing(null)} />
+    </>
+  );
+}
+
 
 const SPEEDS = [1, 1.5, 2];
 
