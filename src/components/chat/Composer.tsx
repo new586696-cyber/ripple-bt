@@ -5,7 +5,7 @@ import { formatDuration, type Message, type Profile } from "@/lib/chat";
 import { extractWaveform } from "@/lib/audio";
 import { messageSnippet } from "@/lib/messaging";
 import { UserAvatar } from "@/components/chat/UserAvatar";
-import { PhotoSourceDialog } from "@/components/chat/PhotoSourceDialog";
+import { PhotoSourceDialog, type PhotoSource } from "@/components/chat/PhotoSourceDialog";
 import { compressImage } from "@/lib/image";
 import { toast } from "sonner";
 
@@ -100,13 +100,22 @@ export function Composer({
   const collectMentions = (value: string) =>
     mentionCandidates.filter((p) => value.includes(`@${p.display_name}`)).map((p) => p.id);
 
-  const acceptPhoto = async (file: File) => {
+  const prepareImage = async (file: File) => {
     try {
-      const compressed = await compressImage(file, { fileName: file.name || "photo.jpg" });
-      setPendingImage({ file: compressed, preview: URL.createObjectURL(compressed) });
+      return await compressImage(file, { fileName: file.name || "photo.jpg" });
     } catch {
-      setPendingImage({ file, preview: URL.createObjectURL(file) });
+      return file;
     }
+  };
+
+  /** Library picks land in the preview tray; camera captures send straight away. */
+  const acceptPhoto = async (file: File, source: PhotoSource) => {
+    const prepared = await prepareImage(file);
+    if (source === "camera") {
+      await onSend({ kind: "image", file: prepared, caption: "" });
+      return;
+    }
+    setPendingImage({ file: prepared, preview: URL.createObjectURL(prepared) });
   };
 
   const submit = async () => {
