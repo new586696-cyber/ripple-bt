@@ -302,6 +302,7 @@ function RowActions({
   isMine,
   deleted,
   canEdit,
+  canDeleteForEveryone,
   pinned,
   starred,
   mine,
@@ -318,6 +319,7 @@ function RowActions({
 }: MessageRowProps & {
   deleted: boolean;
   canEdit: boolean;
+  canDeleteForEveryone: boolean;
   mine: string | null;
   pickerOpen: boolean;
   setPickerOpen: (open: boolean) => void;
@@ -396,7 +398,7 @@ function RowActions({
           <DropdownMenuItem onClick={onDeleteForMe}>
             <Trash2 className="size-4" /> Delete for me
           </DropdownMenuItem>
-          {isMine && !deleted ? (
+          {canDeleteForEveryone ? (
             <DropdownMenuItem className="text-destructive" onClick={onDeleteForEveryone}>
               <Trash2 className="size-4" /> Delete for everyone
             </DropdownMenuItem>
