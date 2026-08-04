@@ -15,6 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/chat/UserAvatar";
 import { chatPhoto, chatTitle, fetchChatList } from "@/lib/chat";
 
+/** Matches mainstream messengers: a single forward can fan out to five chats. */
+export const FORWARD_LIMIT = 5;
+
 export function ForwardDialog({
   open,
   onOpenChange,
@@ -39,6 +42,7 @@ export function ForwardDialog({
   const items = (data ?? []).filter((item) =>
     chatTitle(item, userId).toLowerCase().includes(term.toLowerCase()),
   );
+  const atLimit = selected.length >= FORWARD_LIMIT;
 
   return (
     <Dialog
