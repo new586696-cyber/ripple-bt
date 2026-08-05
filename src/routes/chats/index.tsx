@@ -122,6 +122,14 @@ function ChatListPage() {
         }
       />
 
+      {userId && !showArchived ? (
+        <StoriesTray
+          userId={userId}
+          myName={profile?.display_name ?? "You"}
+          myPhoto={profile?.photo_url ?? null}
+        />
+      ) : null}
+
       <div className="flex items-center gap-2 border-b border-border bg-background px-3 py-2">
         {FILTERS.map((f) => {
           const activeChip = filter === f.id;
