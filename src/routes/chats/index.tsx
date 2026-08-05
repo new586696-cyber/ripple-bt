@@ -21,6 +21,7 @@ import {
   type ChatListItem,
 } from "@/lib/chat";
 import { AppShell, TopBar } from "@/components/chat/AppShell";
+import { StoriesTray } from "@/components/chat/StoriesTray";
 import { UserAvatar } from "@/components/chat/UserAvatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -121,6 +122,14 @@ function ChatListPage() {
           </div>
         }
       />
+
+      {userId && !showArchived ? (
+        <StoriesTray
+          userId={userId}
+          myName={profile?.display_name ?? "You"}
+          myPhoto={profile?.photo_url ?? null}
+        />
+      ) : null}
 
       <div className="flex items-center gap-2 border-b border-border bg-background px-3 py-2">
         {FILTERS.map((f) => {

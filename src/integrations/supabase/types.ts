@@ -22,7 +22,10 @@ export type Database = {
           joined_at: string
           last_read_at: string
           muted: boolean
+          muted_until: string | null
+          notification_sound: string | null
           user_id: string
+          wallpaper: string | null
         }
         Insert: {
           archived?: boolean
@@ -31,7 +34,10 @@ export type Database = {
           joined_at?: string
           last_read_at?: string
           muted?: boolean
+          muted_until?: string | null
+          notification_sound?: string | null
           user_id: string
+          wallpaper?: string | null
         }
         Update: {
           archived?: boolean
@@ -40,7 +46,10 @@ export type Database = {
           joined_at?: string
           last_read_at?: string
           muted?: boolean
+          muted_until?: string | null
+          notification_sound?: string | null
           user_id?: string
+          wallpaper?: string | null
         }
         Relationships: [
           {
@@ -153,6 +162,81 @@ export type Database = {
           {
             foreignKeyName: "chats_last_message_sender_id_fkey"
             columns: ["last_message_sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_nicknames: {
+        Row: {
+          created_at: string
+          nickname: string
+          owner_id: string
+          target_id: string
+        }
+        Insert: {
+          created_at?: string
+          nickname: string
+          owner_id: string
+          target_id: string
+        }
+        Update: {
+          created_at?: string
+          nickname?: string
+          owner_id?: string
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_nicknames_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_nicknames_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      friend_streaks: {
+        Row: {
+          count: number
+          freeze_days_remaining: number
+          last_interaction_date: string | null
+          user_a: string
+          user_b: string
+        }
+        Insert: {
+          count?: number
+          freeze_days_remaining?: number
+          last_interaction_date?: string | null
+          user_a: string
+          user_b: string
+        }
+        Update: {
+          count?: number
+          freeze_days_remaining?: number
+          last_interaction_date?: string | null
+          user_a?: string
+          user_b?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_streaks_user_a_fkey"
+            columns: ["user_a"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friend_streaks_user_b_fkey"
+            columns: ["user_b"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -370,6 +454,177 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipt_overrides: {
+        Row: {
+          owner_id: string
+          show_read_receipts: boolean
+          target_id: string
+        }
+        Insert: {
+          owner_id: string
+          show_read_receipts: boolean
+          target_id: string
+        }
+        Update: {
+          owner_id?: string
+          show_read_receipts?: boolean
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_overrides_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_overrides_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stickers: {
+        Row: {
+          created_at: string
+          id: string
+          path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stickers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stories: {
+        Row: {
+          background: Json | null
+          created_at: string
+          expires_at: string
+          id: string
+          media_url: string | null
+          text_content: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          background?: Json | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          media_url?: string | null
+          text_content?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          background?: Json | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          media_url?: string | null
+          text_content?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stories_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_views: {
+        Row: {
+          story_id: string
+          viewed_at: string
+          viewer_id: string
+        }
+        Insert: {
+          story_id: string
+          viewed_at?: string
+          viewer_id: string
+        }
+        Update: {
+          story_id?: string
+          viewed_at?: string
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_views_viewer_id_fkey"
+            columns: ["viewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_blocks: {
         Row: {
           blocked_id: string
@@ -422,6 +677,8 @@ export type Database = {
         Returns: boolean
       }
       message_chat_id: { Args: { _message_id: string }; Returns: string }
+      purge_expired_stories: { Args: never; Returns: undefined }
+      story_owner: { Args: { _story_id: string }; Returns: string }
     }
     Enums: {
       chat_type: "direct" | "group"
