@@ -21,6 +21,7 @@ import {
   type ChatListItem,
 } from "@/lib/chat";
 import { AppShell, TopBar } from "@/components/chat/AppShell";
+import { StoriesTray } from "@/components/chat/StoriesTray";
 import { UserAvatar } from "@/components/chat/UserAvatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
