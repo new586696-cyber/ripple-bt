@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Image as ImageIcon, Mic, Paperclip, Send, Square, Trash2, X } from "lucide-react";
+import {
+  Check,
+  Image as ImageIcon,
+  Mic,
+  Paperclip,
+  Send,
+  Smile,
+  Square,
+  Trash2,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDuration, type Message, type Profile } from "@/lib/chat";
 import { extractWaveform } from "@/lib/audio";
@@ -7,6 +17,9 @@ import { messageSnippet } from "@/lib/messaging";
 import { UserAvatar } from "@/components/chat/UserAvatar";
 import { PhotoSourceDialog, type PhotoSource } from "@/components/chat/PhotoSourceDialog";
 import { compressImage } from "@/lib/image";
+import { StickerTray } from "@/components/chat/StickerTray";
+import { readDraft, writeDraft } from "@/lib/personalization";
+import { haptic, playSend } from "@/lib/feedback";
 import { toast } from "sonner";
 
 export type OutgoingMessage =
@@ -19,6 +32,8 @@ export type ReplyTarget = { message: Message; senderName: string };
 export type EditTarget = { id: string; text: string };
 
 export function Composer({
+  chatId,
+  userId,
   onSend,
   replyTo,
   onCancelReply,
@@ -30,6 +45,8 @@ export function Composer({
   disabled = false,
   disabledReason,
 }: {
+  chatId?: string;
+  userId?: string;
   onSend: (msg: OutgoingMessage) => void | Promise<void>;
   replyTo?: ReplyTarget | null;
   onCancelReply?: () => void;
@@ -47,6 +64,7 @@ export function Composer({
   const [seconds, setSeconds] = useState(0);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [photoPickerOpen, setPhotoPickerOpen] = useState(false);
+  const [stickerOpen, setStickerOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
   const recorder = useRef<MediaRecorder | null>(null);
@@ -60,6 +78,17 @@ export function Composer({
       recorder.current?.stream.getTracks().forEach((t) => t.stop());
     };
   }, []);
+
+  // Per-chat drafts survive navigating away and reloads.
+  useEffect(() => {
+    if (!chatId) return;
+    setText(readDraft(chatId));
+  }, [chatId]);
+
+  useEffect(() => {
+    if (!chatId || editing) return;
+    writeDraft(chatId, text);
+  }, [chatId, text, editing]);
 
   useEffect(() => {
     if (editing) {
@@ -132,6 +161,9 @@ export function Composer({
       URL.revokeObjectURL(pendingImage.preview);
       setPendingImage(null);
       setText("");
+      if (chatId) writeDraft(chatId, "");
+      haptic("tap");
+      playSend();
       await onSend(payload);
       return;
     }
@@ -139,6 +171,9 @@ export function Composer({
     if (!value) return;
     setText("");
     setMentionQuery(null);
+    if (chatId) writeDraft(chatId, "");
+    haptic("tap");
+    playSend();
     await onSend({ kind: "text", text: value, mentions: collectMentions(value) });
   };
 
@@ -321,6 +356,17 @@ export function Composer({
             >
               <ImageIcon className="size-5" />
             </Button>
+            {userId ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Send a sticker"
+                onClick={() => setStickerOpen(true)}
+              >
+                <Smile className="size-5" />
+              </Button>
+            ) : null}
           </>
         ) : null}
 
@@ -366,6 +412,15 @@ export function Composer({
           </Button>
         )}
       </form>
+
+      {userId ? (
+        <StickerTray
+          open={stickerOpen}
+          onOpenChange={setStickerOpen}
+          userId={userId}
+          onSend={(file) => void onSend({ kind: "image", file, caption: "" })}
+        />
+      ) : null}
 
       <PhotoSourceDialog
         open={photoPickerOpen}
