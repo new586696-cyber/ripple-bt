@@ -188,9 +188,11 @@ export function ChatPersonalizeDialog({
         {other ? (
           <section className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-foreground">Read receipts here</h3>
+              <h3 className="text-sm font-semibold text-foreground">
+                Show {other.display_name}'s read receipts
+              </h3>
               <p className="text-xs text-muted-foreground">
-                Turn off to stop sharing read receipts with {other.display_name}.
+                Turn off to hide their blue ticks in this chat.
               </p>
             </div>
             <Switch

@@ -55,7 +55,11 @@ import {
 import { fetchLinkPreview } from "@/lib/link-preview.functions";
 import { usePresence, useTyping } from "@/lib/realtime";
 import { notifyMessage } from "@/lib/notifications";
-import { fetchNicknames, wallpaperStyle } from "@/lib/personalization";
+import {
+  fetchNicknames,
+  fetchReceiptOverrides,
+  wallpaperStyle,
+} from "@/lib/personalization";
 import { fetchStreak, streakIsLive } from "@/lib/streaks";
 import { haptic, playNotificationSound } from "@/lib/feedback";
 import { notifyNewMessage } from "@/lib/push.functions";
@@ -172,6 +176,12 @@ function ChatPage() {
     queryKey: ["nicknames", userId],
     enabled: !!userId,
     queryFn: () => fetchNicknames(userId as string),
+  });
+
+  const receiptOverridesQuery = useQuery({
+    queryKey: ["receipt-overrides", userId],
+    enabled: !!userId,
+    queryFn: () => fetchReceiptOverrides(userId as string),
   });
 
   const streakQuery = useQuery({
@@ -449,6 +459,10 @@ function ChatPage() {
     ? combined.filter((m) => (m.text ?? "").toLowerCase().includes(term.trim().toLowerCase()))
     : combined;
 
+  const receiptsHiddenFor = Object.entries(receiptOverridesQuery.data ?? {})
+    .filter(([, value]) => value === false)
+    .map(([id]) => id);
+
   const memberNames = members.map((m) => m.profiles?.display_name ?? "").filter(Boolean);
   const mentionCandidates = others
     .map((m) => m.profiles)
@@ -677,6 +691,7 @@ function ChatPage() {
                   others={others}
                   myUserId={userId ?? ""}
                   memberNames={memberNames}
+                  receiptsHiddenFor={receiptsHiddenFor}
                   reactions={(reactionsQuery.data ?? []).filter((r) => r.message_id === message.id)}
                   starred={starred.has(message.id)}
                   pinned={pinnedIds.has(message.id)}
@@ -807,6 +822,7 @@ function ChatPage() {
             refetchAfterMutation([
               ["chat", chatId],
               ["nicknames", userId],
+              ["receipt-overrides", userId],
               ["chat-list", userId],
             ]);
           }}
