@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchNicknames } from "@/lib/personalization";
 import {
   Archive,
   BellOff,
@@ -57,6 +58,21 @@ function ChatListPage() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
   const [showArchived, setShowArchived] = useState(false);
+
+  const nicknames = useQuery({
+    queryKey: ["nicknames", userId],
+    enabled: !!userId,
+    queryFn: () => fetchNicknames(userId as string),
+  });
+
+  const displayTitle = (item: ChatListItem) => {
+    if (item.chat.type === "direct") {
+      const other = item.members.find((m) => m.user_id !== userId);
+      const nick = other ? nicknames.data?.[other.user_id] : undefined;
+      if (nick) return nick;
+    }
+    return chatTitle(item, userId as string);
+  };
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["chat-list", userId],
@@ -217,13 +233,13 @@ function ChatListPage() {
                   className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
                 >
                   <UserAvatar
-                    name={chatTitle(item, userId as string)}
+                    name={displayTitle(item)}
                     src={chatPhoto(item, userId as string)}
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="truncate font-semibold text-foreground">
-                        {chatTitle(item, userId as string)}
+                        {displayTitle(item)}
                       </span>
                       <span className="shrink-0 text-xs text-muted-foreground">
                         {formatTime(item.chat.last_message_at)}
