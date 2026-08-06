@@ -13,6 +13,20 @@ import {
   notificationsSupported,
   setNotificationsEnabled,
 } from "@/lib/notifications";
+import {
+  disablePush,
+  enablePush,
+  needsHomeScreenInstall,
+  pushSupported,
+  registerServiceWorker,
+} from "@/lib/push";
+import {
+  hapticsEnabled,
+  playChime,
+  setHapticsEnabled,
+  setSoundsEnabled,
+  soundsEnabled,
+} from "@/lib/feedback";
 import { AppShell, TopBar } from "@/components/chat/AppShell";
 import { UserAvatar } from "@/components/chat/UserAvatar";
 import { PhotoSourceDialog } from "@/components/chat/PhotoSourceDialog";
@@ -79,6 +93,11 @@ function SettingsPage() {
   const [theme, setThemeState] = useState<Theme>("system");
   const [notifOn, setNotifOn] = useState(false);
   const [notifDenied, setNotifDenied] = useState(false);
+  const [pushOn, setPushOn] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [sounds, setSounds] = useState(true);
+  const [haptics, setHaptics] = useState(true);
+  const [installHint, setInstallHint] = useState(false);
   const [lastSeen, setLastSeen] = useState(true);
   const [receipts, setReceipts] = useState(true);
 
@@ -86,6 +105,15 @@ function SettingsPage() {
     setThemeState(getStoredTheme());
     setNotifOn(notificationPreference());
     if (notificationsSupported()) setNotifDenied(Notification.permission === "denied");
+    setSounds(soundsEnabled());
+    setHaptics(hapticsEnabled());
+    setInstallHint(needsHomeScreenInstall());
+    if (!pushSupported()) return;
+    void (async () => {
+      const registration = await registerServiceWorker();
+      const sub = await registration?.pushManager.getSubscription();
+      setPushOn(!!sub && Notification.permission === "granted");
+    })();
   }, []);
 
   useEffect(() => {
@@ -268,7 +296,49 @@ function SettingsPage() {
                     }}
                   />
                 </Row>
+                <Row
+                  label="Push notifications"
+                  hint="Delivered even when Ripple is closed, on this device."
+                >
+                  <Switch
+                    checked={pushOn}
+                    disabled={!pushSupported() || pushBusy}
+                    aria-label="Push notifications"
+                    onCheckedChange={async (next) => {
+                      if (!userId) return;
+                      setPushBusy(true);
+                      try {
+                        if (next) {
+                          const ok = await enablePush(userId);
+                          setPushOn(ok);
+                          if (ok) toast.success("Push notifications on");
+                          else
+                            toast.error("We couldn't turn on push", {
+                              description:
+                                "Allow notifications for this site, then try again.",
+                            });
+                        } else {
+                          await disablePush(userId);
+                          setPushOn(false);
+                          toast.success("Push notifications off");
+                        }
+                      } finally {
+                        setPushBusy(false);
+                      }
+                    }}
+                  />
+                </Row>
               </div>
+              {!pushSupported() ? (
+                <p className="text-xs text-muted-foreground">
+                  This browser doesn't support push notifications.
+                </p>
+              ) : installHint ? (
+                <p className="text-xs text-muted-foreground">
+                  On iPhone and iPad, add Ripple to your Home Screen first to allow push
+                  notifications.
+                </p>
+              ) : null}
               {!notificationsSupported() ? (
                 <p className="text-xs text-muted-foreground">
                   This browser doesn't support notifications.
@@ -279,6 +349,36 @@ function SettingsPage() {
                   permissions for this page, then switch this back on.
                 </p>
               ) : null}
+            </section>
+
+            <section>
+              <h2 className="mb-1 text-sm font-semibold text-muted-foreground">
+                Sound &amp; haptics
+              </h2>
+              <div className="divide-y divide-border">
+                <Row label="Sound effects" hint="Soft cues when you send and receive.">
+                  <Switch
+                    checked={sounds}
+                    aria-label="Sound effects"
+                    onCheckedChange={(next) => {
+                      setSounds(next);
+                      setSoundsEnabled(next);
+                      if (next) playChime();
+                    }}
+                  />
+                </Row>
+                <Row label="Vibration" hint="Gentle haptics on supported devices.">
+                  <Switch
+                    checked={haptics}
+                    aria-label="Vibration"
+                    onCheckedChange={(next) => {
+                      setHaptics(next);
+                      setHapticsEnabled(next);
+                      if (next) navigator.vibrate?.(12);
+                    }}
+                  />
+                </Row>
+              </div>
             </section>
 
             <section>

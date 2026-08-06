@@ -53,6 +53,8 @@ export type MessageRowProps = {
   highlighted?: boolean;
   searchTerm?: string;
   memberNames: string[];
+  /** People whose read receipts you've chosen not to see. */
+  receiptsHiddenFor?: string[];
   onReply: () => void;
   onReact: (emoji: string) => void;
   onStar: () => void;
@@ -84,6 +86,7 @@ export function MessageRow(props: MessageRowProps) {
     highlighted,
     searchTerm,
     memberNames,
+    receiptsHiddenFor,
     onReply,
     onReact,
     onStar,
@@ -101,7 +104,10 @@ export function MessageRow(props: MessageRowProps) {
 
   const deleted = !!message.deleted_at;
   // People who hide their read receipts never turn anyone's ticks blue.
-  const receiptOthers = others.filter((o) => o.profiles?.show_read_receipts !== false);
+  const hiddenReceipts = new Set(receiptsHiddenFor ?? []);
+  const receiptOthers = others.filter(
+    (o) => o.profiles?.show_read_receipts !== false && !hiddenReceipts.has(o.user_id),
+  );
   const seenBy = receiptOthers.filter(
     (o) => new Date(o.last_read_at).getTime() >= new Date(message.created_at).getTime(),
   );

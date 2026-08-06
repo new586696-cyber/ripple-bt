@@ -8,7 +8,9 @@ import {
   Ban,
   BellOff,
   Bell,
+  Flame,
   Info,
+  Palette,
   MoreVertical,
   Pin,
   Search,
@@ -53,6 +55,15 @@ import {
 import { fetchLinkPreview } from "@/lib/link-preview.functions";
 import { usePresence, useTyping } from "@/lib/realtime";
 import { notifyMessage } from "@/lib/notifications";
+import {
+  fetchNicknames,
+  fetchReceiptOverrides,
+  wallpaperStyle,
+} from "@/lib/personalization";
+import { fetchStreak, streakIsLive } from "@/lib/streaks";
+import { haptic, playNotificationSound } from "@/lib/feedback";
+import { notifyNewMessage } from "@/lib/push.functions";
+import { ChatPersonalizeDialog } from "@/components/chat/ChatPersonalizeDialog";
 import { AppShell, TopBar } from "@/components/chat/AppShell";
 import { UserAvatar } from "@/components/chat/UserAvatar";
 import { Composer, type EditTarget, type OutgoingMessage, type ReplyTarget } from "@/components/chat/Composer";
@@ -102,6 +113,7 @@ function ChatPage() {
   const [term, setTerm] = useState("");
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [personaliseOpen, setPersonaliseOpen] = useState(false);
 
   const chatQuery = useQuery({
     queryKey: ["chat", chatId],
@@ -159,6 +171,24 @@ function ChatPage() {
   const others = useMemo(() => members.filter((m) => m.user_id !== userId), [members, userId]);
   const me = members.find((m) => m.user_id === userId);
   const otherUser = chat?.type === "direct" ? (others[0]?.profiles ?? null) : null;
+
+  const nicknamesQuery = useQuery({
+    queryKey: ["nicknames", userId],
+    enabled: !!userId,
+    queryFn: () => fetchNicknames(userId as string),
+  });
+
+  const receiptOverridesQuery = useQuery({
+    queryKey: ["receipt-overrides", userId],
+    enabled: !!userId,
+    queryFn: () => fetchReceiptOverrides(userId as string),
+  });
+
+  const streakQuery = useQuery({
+    queryKey: ["streak", userId, otherUser?.id],
+    enabled: !!userId && !!otherUser?.id,
+    queryFn: () => fetchStreak(userId as string, otherUser?.id as string),
+  });
 
   const blockQuery = useQuery({
     queryKey: ["block", userId, otherUser?.id],
@@ -240,8 +270,10 @@ function ChatPage() {
     lastSeenId.current = latest.id;
     if (latest.sender_id === userId || me?.muted) return;
     const sender = members.find((m) => m.user_id === latest.sender_id)?.profiles;
+    playNotificationSound(me?.notification_sound);
+    haptic("tap");
     notifyMessage(sender?.display_name ?? "New message", messageSnippet(latest), chatId);
-  }, [messages, userId, members, me?.muted, chatId]);
+  }, [messages, userId, members, me?.muted, me?.notification_sound, chatId]);
 
   // Mark as read on open and whenever new messages arrive while open.
   useEffect(() => {
@@ -256,7 +288,13 @@ function ChatPage() {
     bottomRef.current?.scrollIntoView({ block: "end" });
   }, [messages.length, pending.length, searchOpen]);
 
-  const title = chat
+  const nickname = otherUser ? nicknamesQuery.data?.[otherUser.id] : undefined;
+  const streak = streakQuery.data ?? null;
+  const streakLive = streakIsLive(streak);
+
+  const title = nickname
+    ? nickname
+    : chat
     ? chatTitle({ chat, members }, userId ?? "")
     : chatQuery.isLoading
       ? "Loading…"
@@ -376,6 +414,11 @@ function ChatPage() {
       setPending((prev) => prev.filter((m) => m.id !== id));
       void queryClient.invalidateQueries({ queryKey: ["chat-list", userId] });
 
+      void notifyNewMessage({
+        data: { chatId, preview: messageSnippet(data as Message) },
+      }).catch(() => undefined);
+      void queryClient.invalidateQueries({ queryKey: ["streak", userId, otherUser?.id] });
+
       const url = firstUrl(optimistic.text);
       if (url) void attachLinkPreview(id, url);
     } catch (error) {
@@ -416,6 +459,10 @@ function ChatPage() {
     ? combined.filter((m) => (m.text ?? "").toLowerCase().includes(term.trim().toLowerCase()))
     : combined;
 
+  const receiptsHiddenFor = Object.entries(receiptOverridesQuery.data ?? {})
+    .filter(([, value]) => value === false)
+    .map(([id]) => id);
+
   const memberNames = members.map((m) => m.profiles?.display_name ?? "").filter(Boolean);
   const mentionCandidates = others
     .map((m) => m.profiles)
@@ -450,6 +497,15 @@ function ChatPage() {
               ) : null}
             </span>
             <span className="truncate">{title}</span>
+            {streakLive ? (
+              <span
+                className="flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary"
+                title={`${streak?.count} day streak`}
+              >
+                <Flame className="size-3" />
+                {streak?.count}
+              </span>
+            ) : null}
           </button>
         }
         subtitle={subtitle}
@@ -505,6 +561,10 @@ function ChatPage() {
                     <Archive className="size-4" />
                   )}
                   {me?.archived ? "Unarchive" : "Archive chat"}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPersonaliseOpen(true)}>
+                  <Palette className="size-4" />
+                  Personalise chat
                 </DropdownMenuItem>
                 {otherUser ? (
                   <DropdownMenuItem
@@ -587,7 +647,10 @@ function ChatPage() {
         </div>
       ) : null}
 
-      <div className="flex-1 space-y-1 overflow-y-auto bg-thread px-3 py-4">
+      <div
+        className="flex-1 space-y-1 overflow-y-auto bg-thread px-3 py-4"
+        style={wallpaperStyle(me?.wallpaper)}
+      >
         {messagesQuery.isLoading ? (
           <MessagesSkeleton />
         ) : messagesQuery.isError ? (
@@ -628,6 +691,7 @@ function ChatPage() {
                   others={others}
                   myUserId={userId ?? ""}
                   memberNames={memberNames}
+                  receiptsHiddenFor={receiptsHiddenFor}
                   reactions={(reactionsQuery.data ?? []).filter((r) => r.message_id === message.id)}
                   starred={starred.has(message.id)}
                   pinned={pinnedIds.has(message.id)}
@@ -718,6 +782,8 @@ function ChatPage() {
       ) : null}
 
       <Composer
+        chatId={chatId}
+        {...(userId ? { userId } : {})}
         onSend={send}
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
@@ -742,6 +808,26 @@ function ChatPage() {
             : "You can't reply to this conversation."
         }
       />
+
+      {userId ? (
+        <ChatPersonalizeDialog
+          open={personaliseOpen}
+          onOpenChange={setPersonaliseOpen}
+          chatId={chatId}
+          userId={userId}
+          other={otherUser}
+          wallpaper={me?.wallpaper ?? null}
+          notificationSound={me?.notification_sound ?? null}
+          onSaved={() => {
+            refetchAfterMutation([
+              ["chat", chatId],
+              ["nicknames", userId],
+              ["receipt-overrides", userId],
+              ["chat-list", userId],
+            ]);
+          }}
+        />
+      ) : null}
 
       <ProfileDialog
         userId={profileUserId}
