@@ -329,14 +329,66 @@ function SettingsPage() {
                   />
                 </Row>
               </div>
+              {installHint && !installed ? (
+                <div className="mt-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
+                  <p className="text-xs font-semibold text-foreground">
+                    Add Ripple to your Home Screen first
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    On iPhone and iPad, notifications only arrive once Ripple is installed. In a
+                    browser tab they will never be delivered.
+                  </p>
+                  <IosInstallSteps />
+                </div>
+              ) : null}
+              {canInstall && !installed ? (
+                <Button
+                  variant="outline"
+                  className="mt-2 h-10 w-full rounded-xl"
+                  onClick={() => void promptInstall()}
+                >
+                  <Download className="size-4" /> Install Ripple
+                </Button>
+              ) : null}
+              {pushOn ? (
+                <Button
+                  variant="outline"
+                  className="mt-2 h-10 w-full rounded-xl"
+                  disabled={testing}
+                  onClick={async () => {
+                    setTesting(true);
+                    try {
+                      const result = await sendTestPush();
+                      if (result.sent > 0) {
+                        toast.success("Test notification sent", {
+                          description: "It should appear on this device in a moment.",
+                        });
+                      } else if (result.reason === "no-subscription") {
+                        toast.error("This device isn't subscribed", {
+                          description: "Switch push notifications off and on again.",
+                        });
+                      } else if (result.reason === "missing-keys") {
+                        toast.error("Push isn't configured on the server yet.");
+                      } else {
+                        toast.error("The notification couldn't be delivered", {
+                          description:
+                            "Your subscription may have expired — toggle push off and on again.",
+                        });
+                      }
+                    } catch {
+                      toast.error("We couldn't send the test notification.");
+                    } finally {
+                      setTesting(false);
+                    }
+                  }}
+                >
+                  <BellRing className="size-4" />
+                  {testing ? "Sending…" : "Send a test notification"}
+                </Button>
+              ) : null}
               {!pushSupported() ? (
                 <p className="text-xs text-muted-foreground">
                   This browser doesn't support push notifications.
-                </p>
-              ) : installHint ? (
-                <p className="text-xs text-muted-foreground">
-                  On iPhone and iPad, add Ripple to your Home Screen first to allow push
-                  notifications.
                 </p>
               ) : null}
               {!notificationsSupported() ? (
@@ -350,6 +402,7 @@ function SettingsPage() {
                 </p>
               ) : null}
             </section>
+
 
             <section>
               <h2 className="mb-1 text-sm font-semibold text-muted-foreground">
