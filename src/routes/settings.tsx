@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Camera, LogOut, Monitor, Moon, Sun } from "lucide-react";
+import { ArrowLeft, BellRing, Camera, Download, LogOut, Monitor, Moon, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useRequireAuth } from "@/lib/use-require-auth";
@@ -20,6 +20,14 @@ import {
   pushSupported,
   registerServiceWorker,
 } from "@/lib/push";
+import { sendTestPush } from "@/lib/push.functions";
+import {
+  canPromptInstall,
+  isStandalone,
+  promptInstall,
+  subscribeInstall,
+} from "@/lib/install";
+import { IosInstallSteps } from "@/components/chat/InstallPrompt";
 import {
   hapticsEnabled,
   playChime,
@@ -98,6 +106,9 @@ function SettingsPage() {
   const [sounds, setSounds] = useState(true);
   const [haptics, setHaptics] = useState(true);
   const [installHint, setInstallHint] = useState(false);
+  const [installed, setInstalled] = useState(true);
+  const [canInstall, setCanInstall] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [lastSeen, setLastSeen] = useState(true);
   const [receipts, setReceipts] = useState(true);
 
@@ -108,6 +119,8 @@ function SettingsPage() {
     setSounds(soundsEnabled());
     setHaptics(hapticsEnabled());
     setInstallHint(needsHomeScreenInstall());
+    setInstalled(isStandalone());
+    setCanInstall(canPromptInstall());
     if (!pushSupported()) return;
     void (async () => {
       const registration = await registerServiceWorker();
@@ -115,6 +128,8 @@ function SettingsPage() {
       setPushOn(!!sub && Notification.permission === "granted");
     })();
   }, []);
+
+  useEffect(() => subscribeInstall(() => setCanInstall(canPromptInstall())), []);
 
   useEffect(() => {
     if (!profile) return;
