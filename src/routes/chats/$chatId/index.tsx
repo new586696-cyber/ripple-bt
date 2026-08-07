@@ -63,6 +63,7 @@ import {
 import { fetchStreak, streakIsLive } from "@/lib/streaks";
 import { haptic, playNotificationSound } from "@/lib/feedback";
 import { notifyNewMessage } from "@/lib/push.functions";
+import { dequeueMessage, isOffline, onReconnect, outboxFor, queueMessage } from "@/lib/outbox";
 import { ChatPersonalizeDialog } from "@/components/chat/ChatPersonalizeDialog";
 import { AppShell, TopBar } from "@/components/chat/AppShell";
 import { UserAvatar } from "@/components/chat/UserAvatar";
