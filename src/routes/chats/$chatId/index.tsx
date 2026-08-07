@@ -365,7 +365,24 @@ function ChatPage() {
     setReplyTo(null);
     setPending((prev) => [...prev, optimistic]);
 
+    // Offline: park the message in the outbox instead of failing the send.
+    if (outgoing.kind === "text" && isOffline()) {
+      queueMessage({
+        id,
+        chatId,
+        text: outgoing.text,
+        mentions: outgoing.mentions,
+        replyTo: replyId,
+        createdAt: now,
+      });
+      setPending((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, pending: true, queued: true } : m)),
+      );
+      return;
+    }
+
     try {
+
       let mediaUrl: string | null = null;
       let mediaMeta: Json | null = null;
 
