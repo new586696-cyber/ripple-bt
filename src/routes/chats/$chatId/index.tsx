@@ -26,6 +26,7 @@ import {
   formatTime,
   friendlyError,
   markChatRead,
+  prefetchMediaUrls,
   uploadChatMedia,
   type Chat,
   type Message,
@@ -258,6 +259,12 @@ function ChatPage() {
     allMessages.forEach((m) => map.set(m.id, m));
     return map;
   }, [allMessages]);
+
+  // Warm signed URLs for recent attachments so media renders instantly.
+  useEffect(() => {
+    const recent = messages.slice(-20).map((m) => m.media_url);
+    if (recent.some(Boolean)) void prefetchMediaUrls(recent);
+  }, [messages]);
 
   // Desktop notification for messages that arrive from someone else.
   useEffect(() => {
