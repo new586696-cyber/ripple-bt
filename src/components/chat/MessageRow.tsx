@@ -3,6 +3,7 @@ import {
   Check,
   CheckCheck,
   Clock,
+  CloudOff,
   CornerUpLeft,
   Copy,
   Forward,
@@ -37,7 +38,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type RowMessage = Message & { pending?: boolean; failed?: boolean };
+export type RowMessage = Message & { pending?: boolean; failed?: boolean; queued?: boolean };
 
 export type MessageRowProps = {
   message: RowMessage;
@@ -245,6 +246,11 @@ export function MessageRow(props: MessageRowProps) {
           {isMine ? (
             message.failed ? (
               <TriangleAlert className="size-3.5 text-destructive" aria-label="Not sent" />
+            ) : message.queued ? (
+              <span className="flex items-center gap-1">
+                <CloudOff className="size-3.5" aria-label="Waiting for connection" />
+                <span>Waiting for connection…</span>
+              </span>
             ) : message.pending ? (
               <Clock className="size-3.5" aria-label="Sending" />
             ) : receiptOthers.length > 0 && seenBy.length === receiptOthers.length ? (
