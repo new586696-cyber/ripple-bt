@@ -24,3 +24,11 @@ export const notifyNewMessage = createServerFn({ method: "POST" })
       preview: data.preview.slice(0, 180),
     });
   });
+
+/** Fires a confirmation push to the caller's own devices. */
+export const sendTestPush = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { sendTestPushToUser } = await import("./push-notify.server");
+    return sendTestPushToUser(context.userId);
+  });

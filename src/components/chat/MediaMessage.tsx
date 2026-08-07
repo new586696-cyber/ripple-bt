@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, File as FileIcon, FileText, Pause, Play, Expand } from "lucide-react";
-import { formatBytes, signedMediaUrl, type Message } from "@/lib/chat";
+import { cachedMediaUrl, formatBytes, signedMediaUrl, type Message } from "@/lib/chat";
 import { formatClock, readWaveform } from "@/lib/audio";
 import { claimVoicePlayback, releaseVoicePlayback } from "@/lib/voice-player";
 import { MediaViewer, type ViewerItem } from "@/components/chat/MediaViewer";
@@ -26,12 +26,18 @@ export function attachmentKind(message: Message): "image" | "video" | "pdf" | "f
 }
 
 function useMediaUrl(path: string | null) {
-  const [url, setUrl] = useState<string | null>(null);
+  // Prefetched URLs resolve synchronously, so media appears without a skeleton.
+  const [url, setUrl] = useState<string | null>(() => cachedMediaUrl(path));
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     let active = true;
     if (!path) return;
     setFailed(false);
+    const cached = cachedMediaUrl(path);
+    if (cached) {
+      setUrl(cached);
+      return;
+    }
     signedMediaUrl(path)
       .then((u) => active && setUrl(u))
       .catch(() => active && setFailed(true));

@@ -203,6 +203,19 @@ export async function signedMediaUrl(path: string) {
   return data.signedUrl;
 }
 
+/** Returns an already-signed URL when one is cached, without a round trip. */
+export function cachedMediaUrl(path: string | null) {
+  if (!path) return null;
+  const cached = signedUrlCache.get(path);
+  return cached && cached.expires > Date.now() ? cached.url : null;
+}
+
+/** Warms the signed-URL cache so media can render without a skeleton step. */
+export async function prefetchMediaUrls(paths: (string | null)[]) {
+  const unique = [...new Set(paths.filter((p): p is string => !!p && !cachedMediaUrl(p)))];
+  await Promise.all(unique.map((p) => signedMediaUrl(p).catch(() => null)));
+}
+
 export function formatBytes(bytes?: number | null) {
   if (!bytes && bytes !== 0) return "";
   if (bytes < 1024) return `${bytes} B`;
