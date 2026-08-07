@@ -97,7 +97,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: "Sign in to Ripple with Google to message friends and groups in real time with photos, voice notes and files." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7897d29e-a2b3-4fa6-b163-b60f4ca86b7c/id-preview-5333011c--dd9e1c22-911c-4ce9-88cf-dce7d6126f52.lovable.app-1785770943290.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/7897d29e-a2b3-4fa6-b163-b60f4ca86b7c/id-preview-5333011c--dd9e1c22-911c-4ce9-88cf-dce7d6126f52.lovable.app-1785770943290.png" },
+      { name: "theme-color", content: "#2f9c95" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "Ripple" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
     ],
+
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
