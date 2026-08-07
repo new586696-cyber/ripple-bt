@@ -450,6 +450,82 @@ function ChatPage() {
     }
   };
 
+  // Restore anything that was queued offline (including across reloads) and
+  // flush it automatically as soon as the connection is back.
+  useEffect(() => {
+    if (!userId) return;
+
+    const queued = outboxFor(chatId);
+    if (queued.length > 0) {
+      setPending((prev) => {
+        const known = new Set(prev.map((m) => m.id));
+        const rows: RowMessage[] = queued
+          .filter((q) => !known.has(q.id))
+          .map((q) => ({
+            id: q.id,
+            chat_id: chatId,
+            sender_id: userId,
+            created_at: q.createdAt,
+            type: "text",
+            text: q.text,
+            media_url: null,
+            media_meta: null,
+            reply_to: q.replyTo,
+            deleted_at: null,
+            edited_at: null,
+            forwarded: false,
+            link_preview: null,
+            mentions: q.mentions,
+            pending: true,
+            queued: true,
+          }));
+        return [...prev, ...rows];
+      });
+    }
+
+    let flushing = false;
+    const flush = async () => {
+      if (flushing || isOffline()) return;
+      flushing = true;
+      try {
+        for (const item of outboxFor(chatId)) {
+          const { data, error } = await supabase
+            .from("messages")
+            .insert({
+              id: item.id,
+              chat_id: chatId,
+              sender_id: userId,
+              type: "text",
+              text: item.text,
+              reply_to: item.replyTo,
+              mentions: item.mentions,
+            })
+            .select("*")
+            .single();
+          if (error) break;
+          dequeueMessage(item.id);
+          queryClient.setQueryData<Message[]>(["messages", chatId], (prev) => {
+            const list = prev ?? [];
+            if (list.some((m) => m.id === data.id)) return list;
+            return [...list, data as Message];
+          });
+          setPending((prev) => prev.filter((m) => m.id !== item.id));
+          void notifyNewMessage({
+            data: { chatId, preview: messageSnippet(data as Message) },
+          }).catch(() => undefined);
+        }
+        void queryClient.invalidateQueries({ queryKey: ["chat-list", userId] });
+      } finally {
+        flushing = false;
+      }
+    };
+
+    void flush();
+    return onReconnect(() => void flush());
+  }, [chatId, userId, queryClient]);
+
+
+
   const attachLinkPreview = async (messageId: string, url: string) => {
     try {
       const preview = await fetchLinkPreview({ data: { url } });
