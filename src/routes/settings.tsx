@@ -129,7 +129,12 @@ function SettingsPage() {
     })();
   }, []);
 
-  useEffect(() => subscribeInstall(() => setCanInstall(canPromptInstall())), []);
+  useEffect(() => {
+    const unsubscribe = subscribeInstall(() => setCanInstall(canPromptInstall()));
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (!profile) return;
